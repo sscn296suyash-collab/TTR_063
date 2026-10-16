@@ -1,0 +1,24 @@
+Build a complete, responsive student productivity website called "Goal Tracker" using only HTML, CSS, and vanilla JavaScript. Keep the project simple and easy to deploy.
+
+Design: modern, polished dashboard inspired by Habitica, with a light background, dark text, green accent color, rounded cards, subtle shadows, and a sidebar on desktop that becomes a mobile-friendly navigation on small screens.
+
+Required features:
+1. Dashboard with app name, today's date, total goals, completed goals, and completion percentage.
+2. Goal cards showing goal name, category, and a checkbox to mark complete or incomplete.
+3. Add, edit, and delete goals using working buttons and a simple form or modal. Include input validation and delete confirmation.
+4. Categories: Study, Fitness, Reading, Coding, and Personal.
+5. Weekly progress chart showing daily completion percentages for the last seven days.
+6. Current streak counter based on consecutive days when all goals scheduled for that day were completed. Handle empty goals sensibly.
+7. Save goals, completion history, and settings in browser localStorage so data survives page refreshes.
+8. Add one original feature: a daily motivational message and a focus-session timer with start, pause, and reset controls.
+9. Seed a few example goals on first launch only. Never overwrite existing user data.
+10. Make the app responsive and accessible. All buttons must work. Update the dashboard and chart immediately when goals change.
+
+Technical requirements:
+- Create index.html, style.css, and script.js.
+- No backend, login, API keys, or paid libraries.
+- Use correct local dates and handle errors or missing localStorage data gracefully.
+- Ensure the application runs directly in a browser.
+- Finish the working functionality before adding visual effects.
+- After coding, explain how to run the app and how to deploy it to GitHub and Vercel.
+- Do not claim features are working unless you have tested them.
