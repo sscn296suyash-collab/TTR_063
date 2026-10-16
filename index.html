@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Goal Tracker - Modern student productivity dashboard inspired by Habitica. Track daily habits, build streaks, and stay focused.">
+  <meta name="theme-color" content="#10b981">
+  <title>Goal Tracker - Student Productivity Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2310b981'><path d='M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z'/></svg>">
+</head>
+<body>
+  <!-- App Layout Container -->
+  <div class="app-layout">
+    
+    <!-- Sidebar for Desktop -->
+    <aside class="sidebar" id="sidebar" aria-label="Sidebar navigation">
+      <div class="sidebar-header">
+        <div class="brand-logo">
+          <span class="brand-icon">🌱</span>
+          <div class="brand-text">
+            <h1 class="brand-title">Goal Tracker</h1>
+            <span class="brand-badge">Habitica Edition</span>
+          </div>
+        </div>
+        <button class="mobile-close-btn" id="mobileSidebarClose" aria-label="Close sidebar">✕</button>
+      </div>
+
+      <!-- Gamified Student Card -->
+      <div class="student-profile-card">
+        <div class="student-avatar-wrap">
+          <div class="student-avatar" id="avatarBadge">🎓</div>
+          <div class="student-status-dot" title="Ready to learn"></div>
+        </div>
+        <div class="student-info">
+          <div class="student-title-row">
+            <strong class="student-name">Scholar Quest</strong>
+            <span class="student-level-tag" id="studentLevelTag">Lvl 1</span>
+          </div>
+          <p class="student-rank-title" id="studentRankTitle">Novice Achiever</p>
+          <div class="xp-bar-container" title="Complete goals to gain XP!">
+            <div class="xp-bar-fill" id="xpBarFill" style="width: 20%;"></div>
+          </div>
+          <div class="xp-legend">
+            <span id="xpText">20 / 100 XP</span>
+            <span class="streak-pill" id="sidebarStreakBadge">🔥 0d</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="sidebar-nav">
+        <a href="#dashboard" class="nav-item active" data-nav="dashboard">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          <span>Dashboard</span>
+        </a>
+        <a href="#goals" class="nav-item" data-nav="goals">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          <span>My Goals</span>
+        </a>
+        <a href="#analytics" class="nav-item" data-nav="analytics">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span>Weekly Trends</span>
+        </a>
+        <a href="#focus-station" class="nav-item" data-nav="focus">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>Focus Station</span>
+        </a>
+        <a href="#motivation" class="nav-item" data-nav="motivation">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          <span>Daily Wisdom</span>
+        </a>
+      </nav>
+
+      <!-- Sidebar Quick Stats Widget -->
+      <div class="sidebar-footer-card">
+        <div class="sidebar-quote-box">
+          <span class="quote-sparkle">💡</span>
+          <p id="miniTip">"Small daily wins compound into massive student success."</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Overlay for mobile drawer -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+      
+      <!-- Top Header -->
+      <header class="top-header">
+        <div class="header-left">
+          <button class="mobile-menu-btn" id="mobileMenuToggle" aria-label="Open menu">
+            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.2" fill="none"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div>
+            <h2 class="welcome-heading">Goal Tracker Dashboard</h2>
+            <p class="current-date-badge" id="currentDateDisplay">Loading today's date...</p>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div class="streak-header-pill" id="headerStreakPill" title="Consecutive days where all scheduled goals were completed">
+            <span class="fire-icon">🔥</span>
+            <span class="streak-count" id="headerStreakCount">0 Day Streak</span>
+          </div>
+
+          <button class="btn btn-primary" id="openAddGoalBtn" aria-label="Add new goal">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Add New Goal</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Body Container -->
+      <main class="content-container">
+
+        <!-- 1. DASHBOARD STAT CARDS -->
+        <section class="section-overview" id="dashboard" aria-label="Dashboard metrics">
+          <div class="stats-grid">
+            
+            <!-- Card 1: Total Goals -->
+            <div class="stat-card">
+              <div class="stat-card-icon-wrap icon-blue">
+                <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              </div>
+              <div class="stat-card-content">
+                <span class="stat-label">Total Goals</span>
+                <span class="stat-value" id="statTotalGoals">0</span>
+                <span class="stat-subtext">Active for today</span>
+              </div>
+            </div>
+
+            <!-- Card 2: Completed Goals -->
+            <div class="stat-card">
+              <div class="stat-card-icon-wrap icon-green">
+                <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </div>
+              <div class="stat-card-content">
+                <span class="stat-label">Completed</span>
+                <span class="stat-value" id="statCompletedGoals">0</span>
+                <span class="stat-subtext" id="statRemainingSubtext">0 remaining</span>
+              </div>
+            </div>
+
+            <!-- Card 3: Completion Percentage -->
+            <div class="stat-card">
+              <div class="stat-card-icon-wrap icon-emerald">
+                <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              </div>
+              <div class="stat-card-content">
+                <span class="stat-label">Completion Rate</span>
+                <span class="stat-value" id="statPercentage">0%</span>
+                <div class="progress-bar-wrap" role="progressbar" id="progressBar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                  <div class="progress-bar-fill" id="statProgressBarFill" style="width: 0%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 4: Current Streak -->
+            <div class="stat-card">
+              <div class="stat-card-icon-wrap icon-amber">
+                <span class="fire-large">🔥</span>
+              </div>
+              <div class="stat-card-content">
+                <span class="stat-label">Current Streak</span>
+                <span class="stat-value" id="statStreakDays">0 Days</span>
+                <span class="stat-subtext" id="statStreakDescription">Consecutive 100% days</span>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- 2. ORIGINAL FEATURE: DAILY MOTIVATION BANNER -->
+        <section class="motivation-banner-section" id="motivation" aria-label="Motivational Message">
+          <div class="card motivation-card">
+            <div class="motivation-left">
+              <div class="motivation-pill-row">
+                <span class="tag-accent">🌟 Daily Student Motivation</span>
+                <span class="quote-category" id="quoteCategoryTag">Mindset</span>
+              </div>
+              <blockquote class="motivation-quote" id="dailyQuoteText">
+                "Small daily improvements over time lead to stunning results."
+              </blockquote>
+              <cite class="motivation-author" id="dailyQuoteAuthor">— Robin Sharma</cite>
+            </div>
+            <div class="motivation-actions">
+              <button class="btn btn-secondary btn-sm" id="btnShuffleQuote" title="Generate another inspirational quote">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+                <span>New Quote</span>
+              </button>
+              <button class="btn btn-outline btn-sm" id="btnCopyQuote" title="Copy quote to clipboard">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span>Copy</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. WEEKLY PROGRESS CHART SECTION -->
+        <section class="analytics-section" id="analytics" aria-label="Weekly Progress Chart">
+          <div class="card chart-card">
+            <div class="card-header chart-header-row">
+              <div>
+                <div class="chart-title-wrap">
+                  <h3 class="card-title">Weekly Progress Chart</h3>
+                  <span class="chart-subtitle">Daily completion rates for the last 7 days</span>
+                </div>
+              </div>
+              <div class="chart-legend">
+                <span class="legend-item"><span class="legend-dot dot-completed"></span> 100% Complete</span>
+                <span class="legend-item"><span class="legend-dot dot-partial"></span> Partial / In-Progress</span>
+                <span class="legend-item"><span class="legend-dot dot-empty"></span> No Goals / 0%</span>
+              </div>
+            </div>
+
+            <div class="chart-container">
+              <!-- Custom Canvas Chart with Tooltip -->
+              <div class="canvas-wrapper">
+                <canvas id="weeklyChartCanvas" height="230"></canvas>
+                <div class="canvas-tooltip" id="chartTooltip" style="opacity: 0;"></div>
+              </div>
+            </div>
+
+            <!-- Weekly Summary Pills -->
+            <div class="weekly-metrics-row">
+              <div class="mini-stat">
+                <span class="mini-stat-label">7-Day Average</span>
+                <span class="mini-stat-val" id="chartAvgCompletion">0%</span>
+              </div>
+              <div class="mini-stat">
+                <span class="mini-stat-label">Best Day</span>
+                <span class="mini-stat-val" id="chartBestDay">—</span>
+              </div>
+              <div class="mini-stat">
+                <span class="mini-stat-label">Total Completed This Week</span>
+                <span class="mini-stat-val" id="chartTotalCompleted">0</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. GOALS MANAGEMENT SECTION -->
+        <section class="goals-section" id="goals" aria-label="Goal Management">
+          <div class="goals-header-bar">
+            <div>
+              <h3 class="section-title">My Goals</h3>
+              <p class="section-subtitle">Organize and conquer your academic & personal habits</p>
+            </div>
+            
+            <div class="goals-actions-group">
+              <button class="btn btn-primary" id="openAddGoalBtnSecondary">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Add Goal</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Controls: Category Filters & Search -->
+          <div class="filter-controls-card">
+            
+            <!-- Category Filter Pills (Req 4: Study, Fitness, Reading, Coding, Personal) -->
+            <div class="category-pills-row" role="tablist" aria-label="Filter goals by category">
+              <button class="cat-pill active" data-category="all" role="tab" aria-selected="true">
+                <span>🌟 All</span>
+                <span class="cat-count" id="countCatAll">0</span>
+              </button>
+              <button class="cat-pill" data-category="Study" role="tab" aria-selected="false">
+                <span>📚 Study</span>
+                <span class="cat-count" id="countCatStudy">0</span>
+              </button>
+              <button class="cat-pill" data-category="Fitness" role="tab" aria-selected="false">
+                <span>🏋️ Fitness</span>
+                <span class="cat-count" id="countCatFitness">0</span>
+              </button>
+              <button class="cat-pill" data-category="Reading" role="tab" aria-selected="false">
+                <span>📖 Reading</span>
+                <span class="cat-count" id="countCatReading">0</span>
+              </button>
+              <button class="cat-pill" data-category="Coding" role="tab" aria-selected="false">
+                <span>💻 Coding</span>
+                <span class="cat-count" id="countCatCoding">0</span>
+              </button>
+              <button class="cat-pill" data-category="Personal" role="tab" aria-selected="false">
+                <span>✨ Personal</span>
+                <span class="cat-count" id="countCatPersonal">0</span>
+              </button>
+            </div>
+
+            <!-- Search, Status filter, & Sorting -->
+            <div class="search-sort-row">
+              <div class="search-input-wrap">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="goalSearchInput" placeholder="Search goals by title or keyword..." aria-label="Search goals">
+                <button class="clear-search-btn" id="clearSearchBtn" aria-label="Clear search">✕</button>
+              </div>
+
+              <div class="filters-dropdown-wrap">
+                <!-- Status Filter -->
+                <select id="statusFilterSelect" class="custom-select" aria-label="Filter by completion status">
+                  <option value="all">All Statuses</option>
+                  <option value="pending">Incomplete / Active</option>
+                  <option value="completed">Completed Only</option>
+                </select>
+
+                <!-- Sort Order -->
+                <select id="sortOrderSelect" class="custom-select" aria-label="Sort goals">
+                  <option value="newest">Sort: Newest First</option>
+                  <option value="alphabetical">Sort: Alphabetical (A-Z)</option>
+                  <option value="category">Sort: Category</option>
+                  <option value="priority">Sort: Priority</option>
+                </select>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Goal Cards List Container -->
+          <div class="goals-list-wrapper">
+            <div class="goals-grid" id="goalsListContainer" aria-live="polite">
+              <!-- Dynamically populated goal cards will appear here -->
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state-card" id="goalsEmptyState" style="display: none;">
+              <div class="empty-icon">🎯</div>
+              <h4 class="empty-title" id="emptyStateTitle">No goals found</h4>
+              <p class="empty-desc" id="emptyStateDesc">You don't have any goals matching the current filter. Ready to set a new target?</p>
+              <button class="btn btn-primary" id="emptyStateAddBtn">
+                <span>+ Create Your First Goal</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. ORIGINAL FEATURE: FOCUS-SESSION TIMER -->
+        <section class="focus-timer-section" id="focus-station" aria-label="Focus session timer">
+          <div class="card focus-card">
+            
+            <div class="focus-card-header">
+              <div>
+                <span class="tag-accent">⏱️ Pomodoro Station</span>
+                <h3 class="card-title">Focus Session Timer</h3>
+                <p class="card-subtitle">Train deep concentration. Link sessions to your goals.</p>
+              </div>
+              <div class="focus-session-stats">
+                <span class="sessions-badge" id="completedSessionsBadge">⭐ 0 Focus Sessions Done</span>
+              </div>
+            </div>
+
+            <div class="focus-timer-body">
+              
+              <!-- Mode Selection -->
+              <div class="timer-mode-selector" role="radiogroup" aria-label="Timer Mode">
+                <button class="timer-mode-btn active" data-duration="25" data-mode="Focus">Focus (25m)</button>
+                <button class="timer-mode-btn" data-duration="5" data-mode="Short Break">Short Break (5m)</button>
+                <button class="timer-mode-btn" data-duration="15" data-mode="Long Break">Long Break (15m)</button>
+                <button class="timer-mode-btn" data-duration="custom" data-mode="Custom">Custom</button>
+              </div>
+
+              <!-- Linked Goal Select -->
+              <div class="timer-goal-link-row">
+                <label for="timerLinkedGoal" class="timer-label">Focusing on:</label>
+                <select id="timerLinkedGoal" class="timer-select">
+                  <option value="">General Study Session</option>
+                  <!-- Populated dynamically with active goals -->
+                </select>
+              </div>
+
+              <!-- Circular Progress Ring Display -->
+              <div class="timer-display-container">
+                <svg class="timer-ring-svg" viewBox="0 0 220 220">
+                  <circle class="timer-ring-bg" cx="110" cy="110" r="95"></circle>
+                  <circle class="timer-ring-progress" id="timerProgressCircle" cx="110" cy="110" r="95"></circle>
+                </svg>
+
+                <div class="timer-time-text-wrap">
+                  <span class="timer-time-text" id="timerDisplay">25:00</span>
+                  <span class="timer-status-subtext" id="timerModeLabel">Focus Time</span>
+                </div>
+              </div>
+
+              <!-- Timer Controls -->
+              <div class="timer-controls-row">
+                <button class="btn btn-primary btn-lg" id="timerStartBtn">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  <span id="timerStartBtnText">Start Focus</span>
+                </button>
+                <button class="btn btn-secondary btn-lg" id="timerPauseBtn" disabled>
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                  <span>Pause</span>
+                </button>
+                <button class="btn btn-outline btn-lg" id="timerResetBtn">
+                  <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                  <span>Reset</span>
+                </button>
+                <button class="sound-toggle-btn" id="timerSoundToggle" aria-label="Toggle chime sound" title="Sound notifications enabled">
+                  <span id="soundIcon">🔔</span>
+                </button>
+              </div>
+
+              <!-- Custom Duration Input Modal / Field -->
+              <div class="custom-time-input-wrap" id="customTimeInputWrap" style="display: none;">
+                <label for="customMinutesInput">Set Custom Minutes:</label>
+                <input type="number" id="customMinutesInput" min="1" max="180" value="30" class="custom-number-input">
+                <button class="btn btn-secondary btn-sm" id="btnApplyCustomTime">Set Time</button>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- 6. DATA MANAGEMENT & BACKUP SETTINGS -->
+        <section class="settings-section" id="settings" aria-label="Settings and Backup">
+          <div class="card settings-card">
+            <h3 class="card-title">Settings & Data</h3>
+            <p class="card-subtitle">Manage your local storage data, backups, and app resets.</p>
+            
+            <div class="settings-buttons-row">
+              <button class="btn btn-outline btn-sm" id="btnExportData" title="Export goals to a JSON backup file">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Export Data (JSON)</span>
+              </button>
+
+              <label class="btn btn-outline btn-sm file-upload-label" title="Import goals from a JSON backup file">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span>Import Data</span>
+                <input type="file" id="importFileInput" accept=".json" style="display: none;">
+              </label>
+
+              <button class="btn btn-outline btn-sm" id="btnClearCompletedGoals" title="Remove all completed goals">
+                <span>Clear Completed Goals</span>
+              </button>
+
+              <button class="btn btn-danger-outline btn-sm" id="btnResetToDefaults" title="Restore sample goals">
+                <span>Restore Sample Goals</span>
+              </button>
+            </div>
+            <div class="streak-explainer-box">
+              <strong>💡 How Streak is Calculated:</strong>
+              <span>Streaks count consecutive days where 100% of all scheduled goals were completed. Days with no goals scheduled won't break your momentum!</span>
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+      <!-- App Footer -->
+      <footer class="app-footer">
+        <p>Goal Tracker &bull; Student Productivity Dashboard &bull; Pure HTML, CSS & Vanilla JS</p>
+        <p class="footer-subtext">Data stored locally in your browser. No accounts or tracking.</p>
+      </footer>
+
+    </div>
+  </div>
+
+  <!-- Mobile Bottom Navigation Bar -->
+  <nav class="mobile-bottom-nav" aria-label="Mobile Navigation">
+    <button class="mobile-nav-btn active" data-target="dashboard" aria-label="Go to Dashboard">
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Stats</span>
+    </button>
+    <button class="mobile-nav-btn" data-target="goals" aria-label="Go to Goals">
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      <span>Goals</span>
+    </button>
+    <button class="mobile-nav-btn mobile-nav-btn-highlight" id="mobileAddGoalFloatingBtn" aria-label="Add new goal">
+      <span class="plus-icon">+</span>
+    </button>
+    <button class="mobile-nav-btn" data-target="analytics" aria-label="Go to Trends">
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>Trends</span>
+    </button>
+    <button class="mobile-nav-btn" data-target="focus-station" aria-label="Go to Focus Timer">
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>Focus</span>
+    </button>
+  </nav>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- 1. ADD / EDIT GOAL MODAL -->
+  <div class="modal-backdrop" id="goalModalBackdrop" style="display: none;" role="presentation">
+    <div class="modal-container" role="dialog" aria-modal="true" aria-labelledby="goalModalTitle" id="goalModal">
+      
+      <div class="modal-header">
+        <div class="modal-header-icon" id="goalModalHeaderIcon">🌱</div>
+        <div>
+          <h3 class="modal-title" id="goalModalTitle">Add New Goal</h3>
+          <p class="modal-subtitle">Define your task and build your streak</p>
+        </div>
+        <button class="modal-close-btn" id="closeGoalModalBtn" aria-label="Close dialog">✕</button>
+      </div>
+
+      <form id="goalForm" novalidate>
+        <input type="hidden" id="goalEditId" value="">
+
+        <!-- Goal Name -->
+        <div class="form-group">
+          <label for="goalNameInput" class="form-label">
+            Goal Name <span class="required-star">*</span>
+          </label>
+          <input 
+            type="text" 
+            id="goalNameInput" 
+            class="form-input" 
+            placeholder="e.g. Study 45 mins for Chemistry exam" 
+            maxlength="80" 
+            required 
+            autocomplete="off"
+          >
+          <div class="form-hint-row">
+            <span class="field-error-msg" id="goalNameError"></span>
+            <span class="char-count" id="goalNameCharCount">0/80</span>
+          </div>
+        </div>
+
+        <!-- Category (Req 4: Study, Fitness, Reading, Coding, Personal) -->
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="goalCategorySelect" class="form-label">
+              Category <span class="required-star">*</span>
+            </label>
+            <select id="goalCategorySelect" class="form-select" required>
+              <option value="Study">📚 Study</option>
+              <option value="Fitness">🏋️ Fitness</option>
+              <option value="Reading">📖 Reading</option>
+              <option value="Coding">💻 Coding</option>
+              <option value="Personal">✨ Personal</option>
+            </select>
+          </div>
+
+          <!-- Priority -->
+          <div class="form-group">
+            <label for="goalPrioritySelect" class="form-label">Priority</label>
+            <select id="goalPrioritySelect" class="form-select">
+              <option value="medium">Medium</option>
+              <option value="high">High 🔥</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Notes / Description -->
+        <div class="form-group">
+          <label for="goalNotesInput" class="form-label">Notes or Target (Optional)</label>
+          <textarea 
+            id="goalNotesInput" 
+            class="form-textarea" 
+            rows="2" 
+            placeholder="e.g. Chapter 4 problems 1-12, take Cornell notes"
+            maxlength="160"
+          ></textarea>
+        </div>
+
+        <!-- Modal Footer Actions -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelGoalModalBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveGoalBtn">
+            <span id="saveGoalBtnText">Save Goal</span>
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- 2. DELETE CONFIRMATION MODAL (Req 3) -->
+  <div class="modal-backdrop" id="deleteModalBackdrop" style="display: none;" role="presentation">
+    <div class="modal-container modal-sm" role="alertdialog" aria-modal="true" aria-labelledby="deleteModalTitle" id="deleteModal">
+      
+      <div class="modal-header modal-header-danger">
+        <div class="modal-header-icon icon-danger">🗑️</div>
+        <div>
+          <h3 class="modal-title" id="deleteModalTitle">Delete Goal</h3>
+          <p class="modal-subtitle">Confirmation required</p>
+        </div>
+        <button class="modal-close-btn" id="closeDeleteModalBtn" aria-label="Close dialog">✕</button>
+      </div>
+
+      <div class="modal-body-content">
+        <p class="delete-warning-text">Are you sure you want to delete this goal?</p>
+        <div class="goal-to-delete-box" id="goalToDeletePreview">
+          <strong id="goalToDeleteTitle">Sample Goal</strong>
+        </div>
+        <p class="delete-subtext">This action cannot be undone and will update your dashboard stats.</p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancelDeleteBtn">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete Goal</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer" aria-live="assertive" aria-atomic="true"></div>
+
+  <!-- Confetti Canvas for Celebrating 100% or Level Up -->
+  <canvas id="confettiCanvas" class="confetti-canvas"></canvas>
+
+  <script src="script.js"></script>
+</body>
+</html>
