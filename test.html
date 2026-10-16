@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Goal Tracker — Automated Test Runner (Self-Contained)</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Test Runner Floating Control Banner */
+    #testRunnerBanner {
+      position: sticky;
+      top: 0;
+      z-index: 9999;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 1rem 1.5rem;
+      border-bottom: 3px solid #10b981;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .test-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .test-title-area {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .test-title-badge {
+      background: #10b981;
+      color: #ffffff;
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      text-transform: uppercase;
+    }
+    .test-score-badge {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+    .test-controls-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .btn-test {
+      background: #334155;
+      color: #f8fafc;
+      border: 1px solid #475569;
+      padding: 0.35rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-test:hover {
+      background: #475569;
+    }
+    .btn-test-primary {
+      background: #10b981;
+      border-color: #059669;
+      color: #ffffff;
+    }
+    .btn-test-primary:hover {
+      background: #059669;
+    }
+    #testResultsList {
+      max-height: 250px;
+      overflow-y: auto;
+      margin-top: 0.85rem;
+      background: #1e293b;
+      border-radius: 8px;
+      padding: 0.75rem;
+      font-family: monospace;
+      font-size: 0.82rem;
+      display: none;
+    }
+    .test-log-entry {
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      margin-bottom: 0.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .test-log-entry.pass {
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.1);
+    }
+    .test-log-entry.fail {
+      color: #f87171;
+      background: rgba(239, 68, 68, 0.15);
+      font-weight: bold;
+    }
+    .progress-bar-test {
+      width: 100%;
+      height: 6px;
+      background: #334155;
+      border-radius: 9999px;
+      margin-top: 0.6rem;
+      overflow: hidden;
+    }
+    .progress-fill-test {
+      height: 100%;
+      background: #10b981;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating Test Runner Control Panel -->
+  <aside id="testRunnerBanner" aria-label="Automated Test Runner">
+    <div class="test-header-row">
+      <div class="test-title-area">
+        <span class="test-title-badge">Test Suite</span>
+        <h2 style="font-size: 1.1rem; margin: 0; font-weight: 800;">Goal Tracker Automated Verification</h2>
+      </div>
+      <div class="test-score-badge" id="testScoreBadge">Running tests...</div>
+      <div class="test-controls-row">
+        <button class="btn-test" id="toggleDetailsBtn">Show Test Logs (39)</button>
+        <button class="btn-test btn-test-primary" id="rerunTestsBtn">Re-run Tests</button>
+      </div>
+    </div>
+    <div class="progress-bar-test">
+      <div class="progress-fill-test" id="testProgressFill"></div>
+    </div>
+    <div id="testResultsList"></div>
+  </aside>
+
+  <!-- Complete App Layout (Directly in DOM - No iframe needed!) -->
+  <div class="app-layout">
+    
+    <!-- Sidebar for Desktop -->
+    <aside class="sidebar" id="sidebar" aria-label="Sidebar navigation">
+      <div class="sidebar-header">
+        <div class="brand-logo">
+          <span class="brand-icon">🌱</span>
+          <div class="brand-text">
+            <h1 class="brand-title">Goal Tracker</h1>
+            <span class="brand-badge">Habitica Edition</span>
+          </div>
+        </div>
+        <button class="mobile-close-btn" id="mobileSidebarClose" aria-label="Close sidebar">✕</button>
+      </div>
+
+      <!-- Gamified Student Card -->
+      <div class="student-profile-card">
+        <div class="student-avatar-wrap">
+          <div class="student-avatar" id="avatarBadge">🎓</div>
+          <div class="student-status-dot" title="Ready to learn"></div>
+        </div>
+        <div class="student-info">
+          <div class="student-title-row">
+            <strong class="student-name">Scholar Quest</strong>
+            <span class="student-level-tag" id="studentLevelTag">Lvl 1</span>
+          </div>
+          <p class="student-rank-title" id="studentRankTitle">Novice Achiever</p>
+          <div class="xp-bar-container" title="Complete goals to gain XP!">
+            <div class="xp-bar-fill" id="xpBarFill" style="width: 20%;"></div>
+          </div>
+          <div class="xp-legend">
+            <span id="xpText">20 / 100 XP</span>
+            <span class="streak-pill" id="sidebarStreakBadge">🔥 0d</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="sidebar-nav">
+        <a href="#dashboard" class="nav-item active" data-nav="dashboard">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          <span>Dashboard</span>
+        </a>
+        <a href="#goals" class="nav-item" data-nav="goals">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          <span>My Goals</span>
+        </a>
+        <a href="#analytics" class="nav-item" data-nav="analytics">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span>Weekly Trends</span>
+        </a>
+        <a href="#focus-station" class="nav-item" data-nav="focus">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>Focus Station</span>
+        </a>
+        <a href="#motivation" class="nav-item" data-nav="motivation">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          <span>Daily Wisdom</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer-card">
+        <div class="sidebar-quote-box">
+          <span class="quote-sparkle">💡</span>
+          <p id="miniTip">"Small daily wins compound into massive student success."</p>
+        </div>
+      </div>
+    </aside>
+
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+      
+      <header class="top-header">
+        <div class="header-left">
+          <button class="mobile-menu-btn" id="mobileMenuToggle" aria-label="Open menu">
+            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.2" fill="none"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div>
+            <h2 class="welcome-heading">Goal Tracker Dashboard</h2>
+            <p class="current-date-badge" id="currentDateDisplay">Loading today's date...</p>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div class="streak-header-pill" id="headerStreakPill" title="Consecutive days where all scheduled goals were completed">
+            <span class="fire-icon">🔥</span>
+            <span class="streak-count" id="headerStreakCount">0 Day Streak</span>
+          </div>
+
+          <button class="btn btn-primary" id="openAddGoalBtn" aria-label="Add new goal">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Add New Goal</span>
+          </button>
+        </div>
+      </header>
+
+      <main class="content-container">
+
+        <!-- 1. DASHBOARD STAT CARDS -->
+        <section class="section-overview" id="dashboard" aria-label="Dashboard metrics">
+          <div class="stats-grid">
+            
+            <div class="stat-card">
+              <div class="stat-card-icon-wrap icon-blue">
+                <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              </div>
+              <div class="stat-card-content">
+                <span class="stat-label">Total Goals</span>
+                <span class="stat-value" id="statTotalGoals">0</span>
+                <span class="stat-subtext">Active for today</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-card-icon-wrap icon-green">
+                <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </div>
+              <div class="stat-card-content">
+                <span class="stat-label">Completed</span>
+                <span class="stat-value" id="statCompletedGoals">0</span>
+                <span class="stat-subtext" id="statRemainingSubtext">0 remaining</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-card-icon-wrap icon-emerald">
+                <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              </div>
+              <div class="stat-card-content">
+                <span class="stat-label">Completion Rate</span>
+                <span class="stat-value" id="statPercentage">0%</span>
+                <div class="progress-bar-wrap" role="progressbar" id="progressBar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                  <div class="progress-bar-fill" id="statProgressBarFill" style="width: 0%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-card-icon-wrap icon-amber">
+                <span class="fire-large">🔥</span>
+              </div>
+              <div class="stat-card-content">
+                <span class="stat-label">Current Streak</span>
+                <span class="stat-value" id="statStreakDays">0 Days</span>
+                <span class="stat-subtext" id="statStreakDescription">Consecutive 100% days</span>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- 2. ORIGINAL FEATURE: DAILY MOTIVATION BANNER -->
+        <section class="motivation-banner-section" id="motivation" aria-label="Motivational Message">
+          <div class="card motivation-card">
+            <div class="motivation-left">
+              <div class="motivation-pill-row">
+                <span class="tag-accent">🌟 Daily Student Motivation</span>
+                <span class="quote-category" id="quoteCategoryTag">Mindset</span>
+              </div>
+              <blockquote class="motivation-quote" id="dailyQuoteText">
+                "Small daily improvements over time lead to stunning results."
+              </blockquote>
+              <cite class="motivation-author" id="dailyQuoteAuthor">— Robin Sharma</cite>
+            </div>
+            <div class="motivation-actions">
+              <button class="btn btn-secondary btn-sm" id="btnShuffleQuote" title="Generate another inspirational quote">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+                <span>New Quote</span>
+              </button>
+              <button class="btn btn-outline btn-sm" id="btnCopyQuote" title="Copy quote to clipboard">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span>Copy</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. WEEKLY PROGRESS CHART SECTION -->
+        <section class="analytics-section" id="analytics" aria-label="Weekly Progress Chart">
+          <div class="card chart-card">
+            <div class="card-header chart-header-row">
+              <div>
+                <div class="chart-title-wrap">
+                  <h3 class="card-title">Weekly Progress Chart</h3>
+                  <span class="chart-subtitle">Daily completion rates for the last 7 days</span>
+                </div>
+              </div>
+              <div class="chart-legend">
+                <span class="legend-item"><span class="legend-dot dot-completed"></span> 100% Complete</span>
+                <span class="legend-item"><span class="legend-dot dot-partial"></span> Partial / In-Progress</span>
+                <span class="legend-item"><span class="legend-dot dot-empty"></span> No Goals / 0%</span>
+              </div>
+            </div>
+
+            <div class="chart-container">
+              <div class="canvas-wrapper">
+                <canvas id="weeklyChartCanvas" height="230"></canvas>
+                <div class="canvas-tooltip" id="chartTooltip" style="opacity: 0;"></div>
+              </div>
+            </div>
+
+            <div class="weekly-metrics-row">
+              <div class="mini-stat">
+                <span class="mini-stat-label">7-Day Average</span>
+                <span class="mini-stat-val" id="chartAvgCompletion">0%</span>
+              </div>
+              <div class="mini-stat">
+                <span class="mini-stat-label">Best Day</span>
+                <span class="mini-stat-val" id="chartBestDay">—</span>
+              </div>
+              <div class="mini-stat">
+                <span class="mini-stat-label">Total Completed This Week</span>
+                <span class="mini-stat-val" id="chartTotalCompleted">0</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. GOALS MANAGEMENT SECTION -->
+        <section class="goals-section" id="goals" aria-label="Goal Management">
+          <div class="goals-header-bar">
+            <div>
+              <h3 class="section-title">My Goals</h3>
+              <p class="section-subtitle">Organize and conquer your academic & personal habits</p>
+            </div>
+            
+            <div class="goals-actions-group">
+              <button class="btn btn-primary" id="openAddGoalBtnSecondary">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Add Goal</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="filter-controls-card">
+            
+            <div class="category-pills-row" role="tablist" aria-label="Filter goals by category">
+              <button class="cat-pill active" data-category="all" role="tab" aria-selected="true">
+                <span>🌟 All</span>
+                <span class="cat-count" id="countCatAll">0</span>
+              </button>
+              <button class="cat-pill" data-category="Study" role="tab" aria-selected="false">
+                <span>📚 Study</span>
+                <span class="cat-count" id="countCatStudy">0</span>
+              </button>
+              <button class="cat-pill" data-category="Fitness" role="tab" aria-selected="false">
+                <span>🏋️ Fitness</span>
+                <span class="cat-count" id="countCatFitness">0</span>
+              </button>
+              <button class="cat-pill" data-category="Reading" role="tab" aria-selected="false">
+                <span>📖 Reading</span>
+                <span class="cat-count" id="countCatReading">0</span>
+              </button>
+              <button class="cat-pill" data-category="Coding" role="tab" aria-selected="false">
+                <span>💻 Coding</span>
+                <span class="cat-count" id="countCatCoding">0</span>
+              </button>
+              <button class="cat-pill" data-category="Personal" role="tab" aria-selected="false">
+                <span>✨ Personal</span>
+                <span class="cat-count" id="countCatPersonal">0</span>
+              </button>
+            </div>
+
+            <div class="search-sort-row">
+              <div class="search-input-wrap">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="goalSearchInput" placeholder="Search goals by title or keyword..." aria-label="Search goals">
+                <button class="clear-search-btn" id="clearSearchBtn" aria-label="Clear search">✕</button>
+              </div>
+
+              <div class="filters-dropdown-wrap">
+                <select id="statusFilterSelect" class="custom-select" aria-label="Filter by completion status">
+                  <option value="all">All Statuses</option>
+                  <option value="pending">Incomplete / Active</option>
+                  <option value="completed">Completed Only</option>
+                </select>
+
+                <select id="sortOrderSelect" class="custom-select" aria-label="Sort goals">
+                  <option value="newest">Sort: Newest First</option>
+                  <option value="alphabetical">Sort: Alphabetical (A-Z)</option>
+                  <option value="category">Sort: Category</option>
+                  <option value="priority">Sort: Priority</option>
+                </select>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="goals-list-wrapper">
+            <div class="goals-grid" id="goalsListContainer" aria-live="polite"></div>
+
+            <div class="empty-state-card" id="goalsEmptyState" style="display: none;">
+              <div class="empty-icon">🎯</div>
+              <h4 class="empty-title" id="emptyStateTitle">No goals found</h4>
+              <p class="empty-desc" id="emptyStateDesc">You don't have any goals matching the current filter. Ready to set a new target?</p>
+              <button class="btn btn-primary" id="emptyStateAddBtn">
+                <span>+ Create Your First Goal</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. ORIGINAL FEATURE: FOCUS-SESSION TIMER -->
+        <section class="focus-timer-section" id="focus-station" aria-label="Focus session timer">
+          <div class="card focus-card">
+            
+            <div class="focus-card-header">
+              <div>
+                <span class="tag-accent">⏱️ Pomodoro Station</span>
+                <h3 class="card-title">Focus Session Timer</h3>
+                <p class="card-subtitle">Train deep concentration. Link sessions to your goals.</p>
+              </div>
+              <div class="focus-session-stats">
+                <span class="sessions-badge" id="completedSessionsBadge">⭐ 0 Focus Sessions Done</span>
+              </div>
+            </div>
+
+            <div class="focus-timer-body">
+              <div class="timer-mode-selector" role="radiogroup" aria-label="Timer Mode">
+                <button class="timer-mode-btn active" data-duration="25" data-mode="Focus">Focus (25m)</button>
+                <button class="timer-mode-btn" data-duration="5" data-mode="Short Break">Short Break (5m)</button>
+                <button class="timer-mode-btn" data-duration="15" data-mode="Long Break">Long Break (15m)</button>
+                <button class="timer-mode-btn" data-duration="custom" data-mode="Custom">Custom</button>
+              </div>
+
+              <div class="timer-goal-link-row">
+                <label for="timerLinkedGoal" class="timer-label">Focusing on:</label>
+                <select id="timerLinkedGoal" class="timer-select">
+                  <option value="">General Study Session</option>
+                </select>
+              </div>
+
+              <div class="timer-display-container">
+                <svg class="timer-ring-svg" viewBox="0 0 220 220">
+                  <circle class="timer-ring-bg" cx="110" cy="110" r="95"></circle>
+                  <circle class="timer-ring-progress" id="timerProgressCircle" cx="110" cy="110" r="95"></circle>
+                </svg>
+
+                <div class="timer-time-text-wrap">
+                  <span class="timer-time-text" id="timerDisplay">25:00</span>
+                  <span class="timer-status-subtext" id="timerModeLabel">Focus Time</span>
+                </div>
+              </div>
+
+              <div class="timer-controls-row">
+                <button class="btn btn-primary btn-lg" id="timerStartBtn">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  <span id="timerStartBtnText">Start Focus</span>
+                </button>
+                <button class="btn btn-secondary btn-lg" id="timerPauseBtn" disabled>
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                  <span>Pause</span>
+                </button>
+                <button class="btn btn-outline btn-lg" id="timerResetBtn">
+                  <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                  <span>Reset</span>
+                </button>
+                <button class="sound-toggle-btn" id="timerSoundToggle" aria-label="Toggle chime sound" title="Sound notifications enabled">
+                  <span id="soundIcon">🔔</span>
+                </button>
+              </div>
+
+              <div class="custom-time-input-wrap" id="customTimeInputWrap" style="display: none;">
+                <label for="customMinutesInput">Set Custom Minutes:</label>
+                <input type="number" id="customMinutesInput" min="1" max="180" value="30" class="custom-number-input">
+                <button class="btn btn-secondary btn-sm" id="btnApplyCustomTime">Set Time</button>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- 6. DATA MANAGEMENT & BACKUP SETTINGS -->
+        <section class="settings-section" id="settings" aria-label="Settings and Backup">
+          <div class="card settings-card">
+            <h3 class="card-title">Settings & Data</h3>
+            <p class="card-subtitle">Manage your local storage data, backups, and app resets.</p>
+            
+            <div class="settings-buttons-row">
+              <button class="btn btn-outline btn-sm" id="btnExportData" title="Export goals to a JSON backup file">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Export Data (JSON)</span>
+              </button>
+
+              <label class="btn btn-outline btn-sm file-upload-label" title="Import goals from a JSON backup file">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span>Import Data</span>
+                <input type="file" id="importFileInput" accept=".json" style="display: none;">
+              </label>
+
+              <button class="btn btn-outline btn-sm" id="btnClearCompletedGoals" title="Remove all completed goals">
+                <span>Clear Completed Goals</span>
+              </button>
+
+              <button class="btn btn-danger-outline btn-sm" id="btnResetToDefaults" title="Restore sample goals">
+                <span>Restore Sample Goals</span>
+              </button>
+            </div>
+            <div class="streak-explainer-box">
+              <strong>💡 How Streak is Calculated:</strong>
+              <span>Streaks count consecutive days where 100% of all scheduled goals were completed. Days with no goals scheduled won't break your momentum!</span>
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+      <footer class="app-footer">
+        <p>Goal Tracker &bull; Student Productivity Dashboard &bull; Pure HTML, CSS & Vanilla JS</p>
+        <p class="footer-subtext">Data stored locally in your browser. No accounts or tracking.</p>
+      </footer>
+
+    </div>
+  </div>
+
+  <!-- Mobile Bottom Navigation Bar -->
+  <nav class="mobile-bottom-nav" aria-label="Mobile Navigation">
+    <button class="mobile-nav-btn active" data-target="dashboard" aria-label="Go to Dashboard">
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Stats</span>
+    </button>
+    <button class="mobile-nav-btn" data-target="goals" aria-label="Go to Goals">
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      <span>Goals</span>
+    </button>
+    <button class="mobile-nav-btn mobile-nav-btn-highlight" id="mobileAddGoalFloatingBtn" aria-label="Add new goal">
+      <span class="plus-icon">+</span>
+    </button>
+    <button class="mobile-nav-btn" data-target="analytics" aria-label="Go to Trends">
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>Trends</span>
+    </button>
+    <button class="mobile-nav-btn" data-target="focus-station" aria-label="Go to Focus Timer">
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>Focus</span>
+    </button>
+  </nav>
+
+  <!-- Modals -->
+  <div class="modal-backdrop" id="goalModalBackdrop" style="display: none;" role="presentation">
+    <div class="modal-container" role="dialog" aria-modal="true" aria-labelledby="goalModalTitle" id="goalModal">
+      
+      <div class="modal-header">
+        <div class="modal-header-icon" id="goalModalHeaderIcon">🌱</div>
+        <div>
+          <h3 class="modal-title" id="goalModalTitle">Add New Goal</h3>
+          <p class="modal-subtitle">Define your task and build your streak</p>
+        </div>
+        <button class="modal-close-btn" id="closeGoalModalBtn" aria-label="Close dialog">✕</button>
+      </div>
+
+      <form id="goalForm" novalidate>
+        <input type="hidden" id="goalEditId" value="">
+
+        <div class="form-group">
+          <label for="goalNameInput" class="form-label">
+            Goal Name <span class="required-star">*</span>
+          </label>
+          <input 
+            type="text" 
+            id="goalNameInput" 
+            class="form-input" 
+            placeholder="e.g. Study 45 mins for Chemistry exam" 
+            maxlength="80" 
+            required 
+            autocomplete="off"
+          >
+          <div class="form-hint-row">
+            <span class="field-error-msg" id="goalNameError"></span>
+            <span class="char-count" id="goalNameCharCount">0/80</span>
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="goalCategorySelect" class="form-label">
+              Category <span class="required-star">*</span>
+            </label>
+            <select id="goalCategorySelect" class="form-select" required>
+              <option value="Study">📚 Study</option>
+              <option value="Fitness">🏋️ Fitness</option>
+              <option value="Reading">📖 Reading</option>
+              <option value="Coding">💻 Coding</option>
+              <option value="Personal">✨ Personal</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="goalPrioritySelect" class="form-label">Priority</label>
+            <select id="goalPrioritySelect" class="form-select">
+              <option value="medium">Medium</option>
+              <option value="high">High 🔥</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="goalNotesInput" class="form-label">Notes or Target (Optional)</label>
+          <textarea 
+            id="goalNotesInput" 
+            class="form-textarea" 
+            rows="2" 
+            placeholder="e.g. Chapter 4 problems 1-12, take Cornell notes"
+            maxlength="160"
+          ></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelGoalModalBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveGoalBtn">
+            <span id="saveGoalBtnText">Save Goal</span>
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="deleteModalBackdrop" style="display: none;" role="presentation">
+    <div class="modal-container modal-sm" role="alertdialog" aria-modal="true" aria-labelledby="deleteModalTitle" id="deleteModal">
+      
+      <div class="modal-header modal-header-danger">
+        <div class="modal-header-icon icon-danger">🗑️</div>
+        <div>
+          <h3 class="modal-title" id="deleteModalTitle">Delete Goal</h3>
+          <p class="modal-subtitle">Confirmation required</p>
+        </div>
+        <button class="modal-close-btn" id="closeDeleteModalBtn" aria-label="Close dialog">✕</button>
+      </div>
+
+      <div class="modal-body-content">
+        <p class="delete-warning-text">Are you sure you want to delete this goal?</p>
+        <div class="goal-to-delete-box" id="goalToDeletePreview">
+          <strong id="goalToDeleteTitle">Sample Goal</strong>
+        </div>
+        <p class="delete-subtext">This action cannot be undone and will update your dashboard stats.</p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancelDeleteBtn">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete Goal</button>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer" aria-live="assertive" aria-atomic="true"></div>
+  <canvas id="confettiCanvas" class="confetti-canvas"></canvas>
+
+  <!-- Load main application script -->
+  <script src="script.js"></script>
+
+  <!-- ==================== AUTOMATED TEST SUITE ==================== -->
+  <script>
+    (function() {
+      const results = [];
+
+      function assert(condition, testName) {
+        if (condition) {
+          results.push({ name: testName, passed: true });
+          console.log(`%c[PASS] ${testName}`, 'color: #10b981; font-weight: bold;');
+        } else {
+          results.push({ name: testName, passed: false });
+          console.error(`[FAIL] ${testName}`);
+        }
+      }
+
+      async function runTestSuite() {
+        results.length = 0;
+        const scoreBadge = document.getElementById('testScoreBadge');
+        const progressBar = document.getElementById('testProgressFill');
+        const resultsList = document.getElementById('testResultsList');
+
+        scoreBadge.textContent = 'Running 39 automated tests...';
+        scoreBadge.style.color = '#f59e0b';
+        resultsList.innerHTML = '';
+
+        // Wait brief tick for App initializations
+        await new Promise(r => setTimeout(r, 200));
+
+        try {
+          // --- Test 1: Initial Page Load & Seeding ---
+          const totalGoalsEl = document.getElementById('statTotalGoals');
+          const completedGoalsEl = document.getElementById('statCompletedGoals');
+          const streakEl = document.getElementById('statStreakDays');
+          const chartCanvas = document.getElementById('weeklyChartCanvas');
+
+          assert(totalGoalsEl && parseInt(totalGoalsEl.textContent) === 5, 'Test 1: Initial 5 seeded goals loaded in dashboard');
+          assert(completedGoalsEl && parseInt(completedGoalsEl.textContent) === 2, 'Test 2: Initial completed goals count is 2');
+          assert(document.querySelectorAll('.goal-card').length === 5, 'Test 3: Exactly 5 goal cards rendered in DOM');
+          assert(chartCanvas !== null, 'Test 4: Weekly progress chart canvas exists');
+
+          // Check streak
+          const streakText = streakEl ? streakEl.textContent : '';
+          assert(streakText.includes('5 Days') || streakText.includes('6 Days'), 'Test 5: Streak counter reflects seeded history: ' + streakText);
+
+          // --- Test 2: Category Filter Counts ---
+          const studyPill = document.querySelector('.cat-pill[data-category="Study"]');
+          assert(document.getElementById('countCatStudy').textContent === '1', 'Test 6: Category count for Study is 1');
+          assert(document.getElementById('countCatCoding').textContent === '1', 'Test 7: Category count for Coding is 1');
+          assert(document.getElementById('countCatReading').textContent === '1', 'Test 8: Category count for Reading is 1');
+          assert(document.getElementById('countCatFitness').textContent === '1', 'Test 9: Category count for Fitness is 1');
+          assert(document.getElementById('countCatPersonal').textContent === '1', 'Test 10: Category count for Personal is 1');
+
+          // Filter by Study
+          studyPill.click();
+          await new Promise(r => setTimeout(r, 80));
+          const visibleStudyCards = document.querySelectorAll('.goal-card');
+          assert(visibleStudyCards.length === 1 && visibleStudyCards[0].dataset.cat === 'Study', 'Test 11: Category filtering shows only Study card');
+
+          // Reset to All
+          document.querySelector('.cat-pill[data-category="all"]').click();
+          await new Promise(r => setTimeout(r, 80));
+          assert(document.querySelectorAll('.goal-card').length === 5, 'Test 12: Filter reset back to All shows 5 cards');
+
+          // --- Test 3: Toggle Goal Completion ---
+          const uncompletedCard = Array.from(document.querySelectorAll('.goal-card')).find(c => !c.classList.contains('completed'));
+          const goalIdToToggle = uncompletedCard.dataset.id;
+          const toggleBtn = uncompletedCard.querySelector('.goal-checkbox-btn');
+          const initialCompleted = parseInt(document.getElementById('statCompletedGoals').textContent);
+          
+          toggleBtn.click();
+          await new Promise(r => setTimeout(r, 100));
+
+          const updatedCompleted = parseInt(document.getElementById('statCompletedGoals').textContent);
+          assert(updatedCompleted === initialCompleted + 1, 'Test 13: Toggling incomplete goal increments completed count');
+          
+          const toggledCard = document.querySelector(`.goal-card[data-id="${goalIdToToggle}"]`);
+          assert(toggledCard && toggledCard.classList.contains('completed'), 'Test 14: Goal card received "completed" styling class');
+
+          // Toggle back
+          toggledCard.querySelector('.goal-checkbox-btn').click();
+          await new Promise(r => setTimeout(r, 100));
+          assert(parseInt(document.getElementById('statCompletedGoals').textContent) === initialCompleted, 'Test 15: Toggling goal back restores completed count');
+
+          // --- Test 4: Goal Validation & Adding New Goal ---
+          const openAddBtn = document.getElementById('openAddGoalBtn');
+          openAddBtn.click();
+          await new Promise(r => setTimeout(r, 100));
+
+          const goalModal = document.getElementById('goalModalBackdrop');
+          assert(goalModal.style.display === 'flex', 'Test 16: Add Goal modal opens on button click');
+
+          // Test empty name validation
+          const saveBtn = document.getElementById('saveGoalBtn');
+          const nameInput = document.getElementById('goalNameInput');
+          nameInput.value = '';
+          saveBtn.click();
+          await new Promise(r => setTimeout(r, 80));
+
+          const errorMsg = document.getElementById('goalNameError').textContent;
+          assert(errorMsg.length > 0, 'Test 17: Validation triggers for empty goal title');
+
+          // Add valid goal
+          nameInput.value = 'Complete Physics Lab Report #3';
+          document.getElementById('goalCategorySelect').value = 'Study';
+          document.getElementById('goalPrioritySelect').value = 'high';
+          document.getElementById('goalNotesInput').value = 'Include error analysis graphs';
+          saveBtn.click();
+          await new Promise(r => setTimeout(r, 100));
+
+          assert(goalModal.style.display === 'none', 'Test 18: Add Goal modal closes after successful submission');
+          assert(parseInt(document.getElementById('statTotalGoals').textContent) === 6, 'Test 19: Total goals count updated to 6');
+          
+          const newGoalCard = Array.from(document.querySelectorAll('.goal-card')).find(c => c.textContent.includes('Physics Lab Report'));
+          assert(newGoalCard !== undefined, 'Test 20: New goal card rendered in goals list');
+
+          // --- Test 5: Editing a Goal ---
+          const editBtn = newGoalCard.querySelector('.edit-btn');
+          editBtn.click();
+          await new Promise(r => setTimeout(r, 100));
+
+          assert(document.getElementById('goalModalTitle').textContent === 'Edit Goal', 'Test 21: Modal title changes to "Edit Goal"');
+          assert(nameInput.value === 'Complete Physics Lab Report #3', 'Test 22: Modal pre-filled with goal name');
+
+          nameInput.value = 'Complete Advanced Physics Lab Report #3';
+          saveBtn.click();
+          await new Promise(r => setTimeout(r, 100));
+
+          const editedGoalCard = Array.from(document.querySelectorAll('.goal-card')).find(c => c.textContent.includes('Advanced Physics Lab Report'));
+          assert(editedGoalCard !== undefined, 'Test 23: Edited goal title reflected on goal card');
+
+          // --- Test 6: Deleting a Goal with Confirmation ---
+          const deleteBtn = editedGoalCard.querySelector('.delete-btn');
+          deleteBtn.click();
+          await new Promise(r => setTimeout(r, 100));
+
+          const deleteModal = document.getElementById('deleteModalBackdrop');
+          assert(deleteModal.style.display === 'flex', 'Test 24: Delete confirmation modal opens');
+          assert(document.getElementById('goalToDeleteTitle').textContent.includes('Advanced Physics Lab Report'), 'Test 25: Delete confirmation shows goal title');
+
+          // Confirm delete
+          const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+          confirmDeleteBtn.click();
+          await new Promise(r => setTimeout(r, 100));
+
+          assert(deleteModal.style.display === 'none', 'Test 26: Delete confirmation modal closes');
+          assert(parseInt(document.getElementById('statTotalGoals').textContent) === 5, 'Test 27: Total goals returns to 5 after deletion');
+
+          // --- Test 7: Motivational Message Original Feature ---
+          const initialQuote = document.getElementById('dailyQuoteText').textContent;
+          const shuffleBtn = document.getElementById('btnShuffleQuote');
+          assert(initialQuote.length > 5, 'Test 28: Daily motivational quote loaded initially');
+          shuffleBtn.click();
+          await new Promise(r => setTimeout(r, 80));
+          assert(document.getElementById('dailyQuoteText').textContent.length > 5, 'Test 29: Quote shuffle works');
+
+          // --- Test 8: Focus-Session Timer Original Feature ---
+          const timerDisplay = document.getElementById('timerDisplay');
+          const timerStartBtn = document.getElementById('timerStartBtn');
+          const timerPauseBtn = document.getElementById('timerPauseBtn');
+          const timerResetBtn = document.getElementById('timerResetBtn');
+
+          assert(timerDisplay.textContent === '25:00', 'Test 30: Default focus timer is 25:00');
+          
+          // Mode switch to Short Break (5m)
+          const breakBtn = document.querySelector('.timer-mode-btn[data-mode="Short Break"]');
+          breakBtn.click();
+          await new Promise(r => setTimeout(r, 80));
+          assert(timerDisplay.textContent === '05:00', 'Test 31: Timer mode switches to 05:00 for Short Break');
+
+          // Start timer
+          timerStartBtn.click();
+          await new Promise(r => setTimeout(r, 100));
+          assert(timerStartBtn.disabled === true, 'Test 32: Start button disabled while running');
+          assert(timerPauseBtn.disabled === false, 'Test 33: Pause button enabled while running');
+
+          // Pause timer
+          timerPauseBtn.click();
+          await new Promise(r => setTimeout(r, 80));
+          assert(timerStartBtn.disabled === false, 'Test 34: Start button re-enabled after pause');
+
+          // Reset timer back to 25m Focus
+          document.querySelector('.timer-mode-btn[data-mode="Focus"]').click();
+          timerResetBtn.click();
+          await new Promise(r => setTimeout(r, 80));
+          assert(timerDisplay.textContent === '25:00', 'Test 35: Reset restores 25:00');
+
+          // --- Test 9: LocalStorage Persistence ---
+          const storedGoals = JSON.parse(window.localStorage.getItem('goaltracker_goals'));
+          assert(Array.isArray(storedGoals) && storedGoals.length === 5, 'Test 36: LocalStorage contains goals array');
+          assert(window.localStorage.getItem('goaltracker_seeded') === 'true', 'Test 37: Seeded flag properly set in localStorage');
+
+          // --- Test 10: Search Filter ---
+          const searchInput = document.getElementById('goalSearchInput');
+          searchInput.value = 'Atomic Habits';
+          searchInput.dispatchEvent(new Event('input'));
+          await new Promise(r => setTimeout(r, 80));
+
+          const searchCards = document.querySelectorAll('.goal-card');
+          assert(searchCards.length === 1 && searchCards[0].textContent.includes('Atomic Habits'), 'Test 38: Search input filters goals correctly');
+
+          // Clear search
+          document.getElementById('clearSearchBtn').click();
+          await new Promise(r => setTimeout(r, 80));
+          assert(document.querySelectorAll('.goal-card').length === 5, 'Test 39: Clear search restores all goals');
+
+          // Update Score UI
+          const passedCount = results.filter(r => r.passed).length;
+          const totalCount = results.length;
+          const percent = Math.round((passedCount / totalCount) * 100);
+
+          progressBar.style.width = `${percent}%`;
+
+          if (passedCount === totalCount) {
+            scoreBadge.textContent = `All ${totalCount} Tests Passed! (100%) ✅`;
+            scoreBadge.style.color = '#34d399';
+            progressBar.style.background = '#10b981';
+          } else {
+            scoreBadge.textContent = `${passedCount} / ${totalCount} Passed (${totalCount - passedCount} Failed) ⚠️`;
+            scoreBadge.style.color = '#f87171';
+            progressBar.style.background = '#ef4444';
+          }
+
+          resultsList.innerHTML = results.map(r => `
+            <div class="test-log-entry ${r.passed ? 'pass' : 'fail'}">
+              <span>${r.passed ? '✅ [PASS]' : '❌ [FAIL]'} ${r.name}</span>
+              <span>${r.passed ? 'OK' : 'ERROR'}</span>
+            </div>
+          `).join('');
+
+          window.testSuiteResults = { passed: passedCount, total: totalCount, allPassed: passedCount === totalCount };
+
+        } catch (err) {
+          console.error('Test execution error:', err);
+          scoreBadge.textContent = 'Test Error: ' + err.message;
+          scoreBadge.style.color = '#f87171';
+          resultsList.style.display = 'block';
+          resultsList.innerHTML = `<div class="test-log-entry fail">${err.stack || err.message}</div>`;
+        }
+      }
+
+      // Hook up UI buttons
+      document.addEventListener('DOMContentLoaded', () => {
+        const toggleBtn = document.getElementById('toggleDetailsBtn');
+        const rerunBtn = document.getElementById('rerunTestsBtn');
+        const resultsList = document.getElementById('testResultsList');
+
+        toggleBtn.addEventListener('click', () => {
+          const isOpen = resultsList.style.display === 'block';
+          resultsList.style.display = isOpen ? 'none' : 'block';
+          toggleBtn.textContent = isOpen ? 'Show Test Logs (39)' : 'Hide Test Logs';
+        });
+
+        rerunBtn.addEventListener('click', () => {
+          runTestSuite();
+        });
+
+        // Run automatically after DOM loaded and app initialized
+        setTimeout(runTestSuite, 400);
+      });
+
+    })();
+  </script>
+</body>
+</html>
